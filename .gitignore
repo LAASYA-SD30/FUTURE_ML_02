@@ -1,0 +1,13 @@
+# Eclipse and IDE files
+.p2/
+
+# Python compiled files
+__pycache__/
+*.pyc
+
+# Large files you don't want to track
+*.mp4
+
+# System files
+.DS_Store
+Thumbs.db
