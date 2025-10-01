@@ -1,5 +1,5 @@
 # -----------------------------
-# Task 2: Customer Churn Prediction with 4 Visualizations
+# Task 2: Customer Churn Prediction - Only 4 Visualizations
 # -----------------------------
 import os
 import pandas as pd
@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, RocCurveDisplay
+from sklearn.metrics import confusion_matrix, roc_auc_score, RocCurveDisplay
 
 # -----------------------------
 # 1. Setup
@@ -61,20 +61,15 @@ for name, model in models.items():
 # 4. Select Best Model
 # -----------------------------
 best_model_name = max(roc_scores, key=roc_scores.get)
-print(f"Best model based on ROC AUC: {best_model_name} (ROC AUC = {roc_scores[best_model_name]:.4f})")
-
 best_model = models[best_model_name]
 best_pipe = Pipeline([("preprocessor", preprocessor), ("model", best_model)])
 best_pipe.fit(X_train, y_train)
 
-# -----------------------------
-# 5. Predictions
-# -----------------------------
 y_pred = best_pipe.predict(X_test)
 y_prob = best_pipe.predict_proba(X_test)[:, 1]
 
 # -----------------------------
-# 6. Confusion Matrix
+# 5. Confusion Matrix
 # -----------------------------
 cm = confusion_matrix(y_test, y_pred)
 plt.figure(figsize=(5,4))
@@ -87,7 +82,7 @@ plt.savefig(os.path.join(OUTPUT_DIR, f"{best_model_name}_confusion_matrix.png"))
 plt.show()
 
 # -----------------------------
-# 7. ROC Curve
+# 6. ROC Curve
 # -----------------------------
 RocCurveDisplay.from_predictions(y_test, y_prob)
 plt.title(f"{best_model_name} - ROC Curve")
@@ -96,7 +91,7 @@ plt.savefig(os.path.join(OUTPUT_DIR, f"{best_model_name}_roc_curve.png"))
 plt.show()
 
 # -----------------------------
-# 8. Churn Distribution
+# 7. Churn Distribution
 # -----------------------------
 plt.figure(figsize=(5,4))
 sns.countplot(x=target, data=df, palette="pastel")
@@ -108,7 +103,7 @@ plt.savefig(os.path.join(OUTPUT_DIR, "churn_distribution.png"))
 plt.show()
 
 # -----------------------------
-# 9. Feature Importance / Coefficients
+# 8. Feature Importance / Coefficients
 # -----------------------------
 if hasattr(best_model, "feature_importances_"):  # Tree-based
     ohe = best_pipe.named_steps["preprocessor"].named_transformers_["cat"]
@@ -117,7 +112,7 @@ if hasattr(best_model, "feature_importances_"):  # Tree-based
 elif hasattr(best_model, "coef_"):  # Logistic Regression
     ohe = best_pipe.named_steps["preprocessor"].named_transformers_["cat"]
     feature_names = numeric_cols + ohe.get_feature_names_out(categorical_cols).tolist()
-    importances = pd.Series(abs(best_model.coef_[0]), index=feature_names)  # absolute value
+    importances = pd.Series(abs(best_model.coef_[0]), index=feature_names)
 
 top_features = importances.sort_values(ascending=False).head(15)
 plt.figure(figsize=(8,5))
@@ -126,28 +121,3 @@ plt.title(f"{best_model_name} - Top 15 Features Affecting Churn")
 plt.tight_layout()
 plt.savefig(os.path.join(OUTPUT_DIR, f"{best_model_name}_feature_importance.png"))
 plt.show()
-
-# -----------------------------
-# 10. Churn Probabilities & High-Risk Customers
-# -----------------------------
-df["Churn_Probability"] = best_pipe.predict_proba(X)[:, 1]
-df.to_csv(os.path.join(OUTPUT_DIR, "customer_churn_probabilities.csv"), index=False)
-
-high_risk_customers = df[df["Churn_Probability"] > 0.7]
-high_risk_customers.to_csv(os.path.join(OUTPUT_DIR, "high_risk_customers.csv"), index=False)
-print(f"Number of high-risk customers (>0.7 probability): {high_risk_customers.shape[0]}")
-
-# -----------------------------
-# 11. Model Summary
-# -----------------------------
-summary = pd.DataFrame({"ROC AUC": roc_scores}).T
-summary.to_csv(os.path.join(OUTPUT_DIR, "model_summary.csv"))
-print("\nModel comparison summary:\n", summary)
-
-# -----------------------------
-# 12. Business Recommendations
-# -----------------------------
-print("\nBusiness Recommendations:")
-print("- Target high-risk customers with retention offers (discounts, loyalty benefits).")
-print("- Review plans with high churn probability and improve customer experience.")
-print("- Use churn probability to prioritize customer support for retention campaigns.")
